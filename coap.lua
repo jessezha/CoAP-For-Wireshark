@@ -8,7 +8,7 @@ do
 	require "bitstring"
 	
 	--Protocol name "CoAP"
-	local p_coap = Proto("CoAP", "Constrained Application Protocol")
+	local p_coap = Proto("CoAP_08", "Constrained Application Protocol - CoAP")
 	
 	--Protocol Fields
 	local f_version = ProtoField.uint8("CoAP.version","Version",base.DEC, nil, 0xC0)
@@ -87,11 +87,30 @@ do
 	
 	local f_o_delta = ProtoField.uint8("CoAP.option.delta", "Option Delta", base.DEC, nil, 0xf0)
 	local f_o_length = ProtoField.uint8("CoAP.option.length", "Value Length", base.DEC, nil)
-	local f_o_value = ProtoField.string("CoAP.option.value", "Option Value", nil)
+	local f_o_value_uint = ProtoField.uint32("CoAP.option.value", "Option Value(uint)", base.DEC)
+	local f_o_value_string = ProtoField.string("CoAP.option.value", "Option Value(string)", nil)
+	local f_o_value_opaque = ProtoField.bytes("CoAP.option.value", "Option Value(opaque)", nil)
+	
+	local f_optionvalue_type = {
+		[1]  = f_o_value_uint,
+		[2]  = f_o_value_uint,
+		[3]  = f_o_value_string,
+		[4]  = f_o_value_opaque,
+		[5]  = f_o_value_string,
+		[6]  = f_o_value_string,
+		[7]  = f_o_value_uint,
+		[8]  = f_o_value_string,
+		[9]  = f_o_value_string,
+		[10] = f_o_value_uint,
+		[11] = f_o_value_opaque,
+		[12] = f_o_value_uint,
+		[13] = f_o_value_opaque,
+		[15] = f_o_value_string,
+	}
 	
 	local f_payload = ProtoField.bytes("CoAP.payload","Payload")
 	
-	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentType, f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_token, f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_fenceposting, f_o_unrecognized, f_o_delta, f_o_length, f_o_value, f_payload }
+	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentType, f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_token, f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_fenceposting, f_o_unrecognized, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_payload }
 	
 	local data_dis = Dissector.get("data")
 	
@@ -161,11 +180,15 @@ do
 			else
 				optionTree = subtree:add(f_o_unrecognized, v_option)
 			end
-			--optionTree:text("aaa")
+			
 			optionTree:add(f_o_delta, delta_length)
 			optionTree:add(f_o_length, val_len)
-			local v_optionvalue = buf(offset+opt_hd_len, val_len)
-			optionTree:add(f_o_value, v_optionvalue)
+			if val_len ~= 0 then
+				local v_optionvalue = buf(offset+opt_hd_len, val_len)
+				optionTree:add(f_optionvalue_type[opt_num], v_optionvalue)
+			else
+				-- no option value
+			end
 			
 			offset = offset + opt_len
 			pre_opt_num = pre_opt_num + v_delta

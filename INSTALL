@@ -1,0 +1,23 @@
+********************************
+        INSTALLATION
+********************************
+
+*** PRE-CONDITION ***
+Make sure your wireshark supports Lua.
+Click: Help -> About Wireshark. 
+If you have the word similar to 'with Lua 5.1', congratulations you can continue the installation.
+If you find 'without Lua', then you'd better upgrade your wireshark.
+
+*** Win32 ***
+1. Copy 'bitstring.dll' to your wireshark directory. This file provides 'bitstring' library for Lua.
+2. Copy 'coap.lua' to somewhere in your wireshark directory. For example, /plugins/coap/coap.lua.
+3. Open 'init.lua' in your wireshark root directory. Comment the line 'disable_lua = true' or change it to 'disable_lua = false'.
+4. Add 'dofile("/plugins/coap/coap.lua")' at the end of the file(init.lua)
+
+*** Linux ***
+1. Install Lua from http://www.lua.org/ftp/
+2. Download 'bitstring-1.0.tar.gz' from http://code.google.com/p/lua-bitstring/
+3. Install bitstring library. Ensure it is on your LUA_CPATH.
+4. Copy 'coap.lua' to somewhere in your wireshark directory. For example, /plugins/coap/coap.lua
+5. Open 'init.lua' in your wireshark root directory. Comment the line 'disable_lua = true' or change it to 'disable_lua = false'.
+6. Add 'dofile("/plugins/coap/coap.lua")' at the end of the file(init.lua)
