@@ -8,7 +8,7 @@ do
 	require "bitstring"
 	
 	--Protocol name "CoAP"
-	local p_coap = Proto("CoAP_08", "Constrained Application Protocol - CoAP")
+	local p_coap = Proto("CoAP_09", "Constrained Application Protocol - CoAP")
 	
 	--Protocol Fields
 	local f_version = ProtoField.uint8("CoAP.version","Version",base.DEC, nil, 0xC0)
@@ -124,7 +124,7 @@ do
 		local firstByte = buf(offset, 1)
 		subtree:add(f_version, firstByte)
 		subtree:add(f_type, firstByte)
-		subtree:add(f_optionCount, firstByte)
+		local octree = subtree:add(f_optionCount, firstByte)
 		offset = offset + 1
 		
 		local version, mtype, optionCount = bitstring.unpack("2:int, 2:int, 4:int", bitstring.fromhexstream(tostring(firstByte:bytes())))
@@ -145,6 +145,11 @@ do
 		subtree:append_text(", Message ID: 0x" .. v_mid)
 		offset = offset + 2
 		
+		-- set notification if option number equals 15
+		if optionCount == 15 then
+			octree:append_text("(Unlimited)")
+		end
+		
 		-- get options
 		local pre_opt_num = 0;
 		for i=1, optionCount do
@@ -156,7 +161,14 @@ do
 			-- first byte, including option delta & length
 			local delta_length = buf(offset,1)
 			local v_delta, v_length = bitstring.unpack("4:int, 4:int", bitstring.fromhexstream(tostring(delta_length:bytes())))
-			print(v_length)
+			
+			-- End-of-options Marker
+			if optionCount == 15 then
+				i = 1
+				if v_delta == 15 and v_length == 0 then
+					break
+				end
+			end
 			
 			-- get the length of the Option Value & the Option, in bytes
 			if v_length == 15 then
@@ -175,10 +187,14 @@ do
 			local v_option = buf(offset,opt_len)
 			local optionTree = nil
 			
-			if f_options[opt_num] ~= nil then
-				optionTree = subtree:add(f_options[opt_num],v_option)
+			if opt_num % 14 == 0 then
+				-- fenceposting, ignored
 			else
-				optionTree = subtree:add(f_o_unrecognized, v_option)
+				if f_options[opt_num] ~= nil then
+					optionTree = subtree:add(f_options[opt_num],v_option)
+				else
+					optionTree = subtree:add(f_o_unrecognized, v_option)
+				end
 			end
 			
 			optionTree:add(f_o_delta, delta_length)
@@ -192,7 +208,7 @@ do
 			
 			offset = offset + opt_len
 			pre_opt_num = pre_opt_num + v_delta
-		end
+		end -- end of options
 		
 		-- get payload
 		if buf(offset):len() == 0 then
