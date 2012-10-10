@@ -8,7 +8,7 @@ do
 	require "bitstring"
 	
 	--Protocol name "CoAP"
-	local p_coap = Proto("CoAP_09", "Constrained Application Protocol - CoAP")
+	local p_coap = Proto("CoAP_12", "Constrained Application Protocol - v12")
 	
 	--Protocol Fields
 	local f_version = ProtoField.uint8("CoAP.version","Version",base.DEC, nil, 0xC0)
@@ -49,7 +49,7 @@ do
 	local f_mid = ProtoField.uint16("CoAP.messageID","Message ID",base.HEX)
 	
 	-- Define Options
-	local f_o_contentType   = ProtoField.bytes("CoAP.option.contentType", "Content-Type Option", nil)
+	local f_o_contentFormat = ProtoField.bytes("CoAP.option.contentFormat", "Content-Format Option", nil)
 	local f_o_maxAge        = ProtoField.bytes("CoAP.option.maxAge", "Max-Age Option", nil)
 	local f_o_proxyUri      = ProtoField.bytes("CoAP.option.proxyUri", "Proxy-Uri Option", nil)
 	local f_o_eTag          = ProtoField.bytes("CoAP.option.eTag", "ETag Option", nil)
@@ -64,53 +64,55 @@ do
 	local f_o_ifMatch       = ProtoField.bytes("CoAP.option.ifMatch", "If-Match Option", nil)
 	local f_o_uriQuery      = ProtoField.bytes("CoAP.option.uriQuery", "Uri-Query Option", nil)
 	local f_o_ifNoneMatch   = ProtoField.bytes("CoAP.option.ifNoneMatch", "If-None-Match Option", nil)
-	local f_o_fenceposting  = ProtoField.bytes("CoAP.option.fenceposting", "Fenceposting(Ignored)", nil)
 	local f_o_unrecognized  = ProtoField.bytes("CoAP.option.unrecognized", "Unrecognized Option", nil)
 	
 	local f_options = {
-		[1]  = f_o_contentType,
-		[2]  = f_o_maxAge,
-		[3]  = f_o_proxyUri,
+		[1]  = f_o_ifMatch,
+		[3]  = f_o_uriHost,
 		[4]  = f_o_eTag,
-		[5]  = f_o_uriHost,
-		[6]  = f_o_locationPath,
+		[5]  = f_o_ifNoneMatch,
 		[7]  = f_o_uriPort,
-		[8]  = f_o_locationQuery,
-		[9]  = f_o_uriPath,
+		[8]  = f_o_locationPath,
 		[10] = f_o_observe,
-		[11] = f_o_token,
-		[12] = f_o_accept,
-		[13] = f_o_ifMatch,
+		[11] = f_o_uriPath,
+		[12] = f_o_contentFormat,
+		[14] = f_o_maxAge,
 		[15] = f_o_uriQuery,
-		[21] = f_o_ifNoneMatch
+		[16] = f_o_accept,
+		[19] = f_o_token,
+		[20] = f_o_locationQuery,
+		[35] = f_o_proxyUri
 	}
 	
+	local f_o_jump = ProtoField.bytes("CoAP.option.delta", "Option Jump", nil)
 	local f_o_delta = ProtoField.uint8("CoAP.option.delta", "Option Delta", base.DEC, nil, 0xf0)
 	local f_o_length = ProtoField.uint8("CoAP.option.length", "Value Length", base.DEC, nil)
 	local f_o_value_uint = ProtoField.uint32("CoAP.option.value", "Option Value(uint)", base.DEC)
 	local f_o_value_string = ProtoField.string("CoAP.option.value", "Option Value(string)", nil)
 	local f_o_value_opaque = ProtoField.bytes("CoAP.option.value", "Option Value(opaque)", nil)
+	local f_o_value_empty = ProtoField.bytes("CoAP.option.value", "Option Value(empty)", nil)
 	
 	local f_optionvalue_type = {
-		[1]  = f_o_value_uint,
-		[2]  = f_o_value_uint,
+		[1]  = f_o_value_opaque,
 		[3]  = f_o_value_string,
 		[4]  = f_o_value_opaque,
-		[5]  = f_o_value_string,
-		[6]  = f_o_value_string,
+		[5]  = f_o_value_empty,
 		[7]  = f_o_value_uint,
 		[8]  = f_o_value_string,
-		[9]  = f_o_value_string,
 		[10] = f_o_value_uint,
-		[11] = f_o_value_opaque,
+		[11] = f_o_value_string,
 		[12] = f_o_value_uint,
-		[13] = f_o_value_opaque,
+		[14] = f_o_value_uint,	
 		[15] = f_o_value_string,
+		[16] = f_o_value_uint,
+		[19] = f_o_value_opaque,
+		[20] = f_o_value_string,
+		[35] = f_o_value_string
 	}
 	
 	local f_payload = ProtoField.bytes("CoAP.payload","Payload")
 	
-	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentType, f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_token, f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_fenceposting, f_o_unrecognized, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_payload }
+	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentFormat, f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_token, f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_unrecognized, f_o_jump, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_o_value_empty, f_payload }
 	
 	local data_dis = Dissector.get("data")
 	
@@ -156,9 +158,9 @@ do
 			-- init option's length & option value's length
 			local opt_len = 0
 			local val_len = 0
-			local opt_hd_len = 0;
+			local opt_hd_len = 1;
 			
-			-- first byte, including option delta & length
+			-- first byte
 			local delta_length = buf(offset,1)
 			local v_delta, v_length = bitstring.unpack("4:int, 4:int", bitstring.fromhexstream(tostring(delta_length:bytes())))
 			
@@ -166,18 +168,56 @@ do
 			if optionCount == 15 then
 				i = 1
 				if v_delta == 15 and v_length == 0 then
+					offset = offset + 1
 					break
 				end
 			end
 			
+			-- handle option jump
+			if v_delta == 15 and v_length >= 1 and v_length <= 3 then
+				if v_length == 1 then
+					v_delta = 15
+				elseif v_length == 2 then
+					local jump_value = buf(offset+1,1):uint()
+					v_delta = (jump_value + 2) * 8
+				elseif v_length == 3 then
+					local jump_value = buf(offset+1,1):uint() + buf(offset+2,1):uint()
+					v_delta = (jump_value + 258) * 8
+				end
+				
+				local v_jump = buf(offset, v_length)
+				local ojump = subtree:add(f_o_jump, v_jump)
+				ojump:append_text(", delta: " .. v_delta)
+				
+				pre_opt_num = pre_opt_num + v_delta
+				offset = offset + v_length
+				delta_length = buf(offset,1)
+				v_delta, v_length = bitstring.unpack("4:int, 4:int", bitstring.fromhexstream(tostring(delta_length:bytes())))
+			end	
+			
 			-- get the length of the Option Value & the Option, in bytes
-			if v_length == 15 then
-				val_len = buf(offset+1,1):uint()
-				opt_hd_len = 2
+			if v_length < 15 then
+				val_len = v_length
 				opt_len = val_len + opt_hd_len
 			else
-				val_len = v_length
-				opt_hd_len = 1
+				local flag1, flag2, flag3
+				flag1 = ( buf(offset+1,1):uint() == 255 )
+				flag2 = ( buf(offset+2,1):uint() == 255 )
+				flag3 = ( buf(offset+3,1):uint() == 255 )
+				
+				if flag1 == false then
+					val_len = buf(offset+1,1):uint() + 15
+					opt_hd_len = 2
+				elseif flag2 == false then
+					val_len = buf(offset+2,1):uint() + 270
+					opt_hd_len = 3
+				elseif flag3 == false then
+					val_len = buf(offset+3,1):uint() + 525
+					opt_hd_len = 4
+				else
+					val_len = buf(offset+4,1):uint() + 780
+					opt_hd_len = 5
+				end
 				opt_len = val_len + opt_hd_len
 			end
 			
@@ -187,14 +227,10 @@ do
 			local v_option = buf(offset,opt_len)
 			local optionTree = nil
 			
-			if opt_num % 14 == 0 then
-				-- fenceposting, ignored
+			if f_options[opt_num] ~= nil then
+				optionTree = subtree:add(f_options[opt_num],v_option)
 			else
-				if f_options[opt_num] ~= nil then
-					optionTree = subtree:add(f_options[opt_num],v_option)
-				else
-					optionTree = subtree:add(f_o_unrecognized, v_option)
-				end
+				optionTree = subtree:add(f_o_unrecognized, v_option)
 			end
 			
 			optionTree:add(f_o_delta, delta_length)

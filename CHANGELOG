@@ -1,3 +1,10 @@
+-- version 0.5 --
+a. [draft-ietf-core-coap-12](Oct.1 2012 released) supportable 
+b. Removed fenceposting
+c. Added Option Jump mechanism
+d. Modified option numbers
+e. Fixed several bugs
+
 -- version 0.4 --
 a. Added fenceposting handling
 b. Added End-of-options Marker defined in [draft-ietf-core-coap-09]
