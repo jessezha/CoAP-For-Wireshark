@@ -37,7 +37,7 @@ do
 			[134] = "4.06 Not Acceptable",
 			[140] = "4.12 Precondition Failed",
 			[141] = "4.13 Request Entity Too Large",
-			[143] = "4.15 Unsupported Media Type",
+			[143] = "4.15 Unsupported Content-Format",
 			[160] = "5.00 Internal Server Error",
 			[161] = "5.01 Not Implemented",
 			[162] = "5.02 Bad Gateway",
@@ -46,7 +46,7 @@ do
 			[165] = "5.05 Proxying Not Supported"
 		}
 	)
-	local f_mid = ProtoField.uint16("CoAP.messageID","Message ID",base.HEX)
+	local f_mid = ProtoField.uint16("CoAP.messageID", "Message ID", base.HEX)
 	
 	-- Define Options
 	local f_o_contentFormat = ProtoField.bytes("CoAP.option.contentFormat", "Content-Format Option", nil)
@@ -64,6 +64,9 @@ do
 	local f_o_ifMatch       = ProtoField.bytes("CoAP.option.ifMatch", "If-Match Option", nil)
 	local f_o_uriQuery      = ProtoField.bytes("CoAP.option.uriQuery", "Uri-Query Option", nil)
 	local f_o_ifNoneMatch   = ProtoField.bytes("CoAP.option.ifNoneMatch", "If-None-Match Option", nil)
+	local f_o_block1	    = ProtoField.bytes("CoAP.option.block1", "Block1 Option", nil)
+	local f_o_block2	    = ProtoField.bytes("CoAP.option.block2", "Block2 Option", nil)
+	local f_o_size		    = ProtoField.bytes("CoAP.option.size", "Size Option", nil)
 	local f_o_unrecognized  = ProtoField.bytes("CoAP.option.unrecognized", "Unrecognized Option", nil)
 	
 	local f_options = {
@@ -71,9 +74,9 @@ do
 		[3]  = f_o_uriHost,
 		[4]  = f_o_eTag,
 		[5]  = f_o_ifNoneMatch,
+		[6]  = f_o_observe,
 		[7]  = f_o_uriPort,
 		[8]  = f_o_locationPath,
-		[10] = f_o_observe,
 		[11] = f_o_uriPath,
 		[12] = f_o_contentFormat,
 		[14] = f_o_maxAge,
@@ -81,6 +84,9 @@ do
 		[16] = f_o_accept,
 		[19] = f_o_token,
 		[20] = f_o_locationQuery,
+		[23] = f_o_block2,
+		[27] = f_o_block1,
+		[28] = f_o_size,
 		[35] = f_o_proxyUri
 	}
 	
@@ -97,9 +103,9 @@ do
 		[3]  = f_o_value_string,
 		[4]  = f_o_value_opaque,
 		[5]  = f_o_value_empty,
+		[6]  = f_o_value_uint,
 		[7]  = f_o_value_uint,
 		[8]  = f_o_value_string,
-		[10] = f_o_value_uint,
 		[11] = f_o_value_string,
 		[12] = f_o_value_uint,
 		[14] = f_o_value_uint,	
@@ -107,12 +113,19 @@ do
 		[16] = f_o_value_uint,
 		[19] = f_o_value_opaque,
 		[20] = f_o_value_string,
+		[23] = f_o_value_uint,
+		[27] = f_o_value_uint,
+		[28] = f_o_value_uint,
 		[35] = f_o_value_string
 	}
 	
 	local f_payload = ProtoField.bytes("CoAP.payload","Payload")
 	
-	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentFormat, f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_token, f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_unrecognized, f_o_jump, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_o_value_empty, f_payload }
+	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentFormat, 
+						f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,
+						f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_block1, f_o_block2, f_o_size, f_o_token, 
+						f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_unrecognized, 
+						f_o_jump, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_o_value_empty, f_payload }
 	
 	local data_dis = Dissector.get("data")
 	
@@ -181,7 +194,7 @@ do
 					local jump_value = buf(offset+1,1):uint()
 					v_delta = (jump_value + 2) * 8
 				elseif v_length == 3 then
-					local jump_value = buf(offset+1,1):uint() + buf(offset+2,1):uint()
+					local jump_value = buf(offset+1,2):uint()
 					v_delta = (jump_value + 258) * 8
 				end
 				

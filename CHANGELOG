@@ -1,3 +1,8 @@
+-- version 0.51 (20121115) --
+a. Changed block1, block2, size, observe option number described in [block-10] and [observe-07]
+b. Modified '4.15 Unsupported Media Type' to '4.15 Unsupported Content-Format'
+c. Fixed one bug on option jump calculation
+
 -- version 0.5 --
 a. [draft-ietf-core-coap-12](Oct.1 2012 released) supportable 
 b. Removed fenceposting
