@@ -1,0 +1,24 @@
+-- version 0.5 --
+a. [draft-ietf-core-coap-12](Oct.1 2012 released) supportable 
+b. Removed fenceposting
+c. Added Option Jump mechanism
+d. Modified option numbers
+e. Fixed several bugs
+
+-- version 0.4 --
+a. Added fenceposting handling
+b. Added End-of-options Marker defined in [draft-ietf-core-coap-09]
+
+-- version 0.3 --
+a. Added Option Value's format for each Option
+b. Added CHANGELOG file
+c. Added INSTALL file
+
+-- version 0.2 --
+a. Added Observe Option
+b. Added [draft-ietf-core-coap-08] support
+c. Fixed some bugs on empty payload situation
+
+-- version 0.1 --
+a. Initial release
+b. Added [draft-ietf-core-coap-07] support
