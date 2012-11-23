@@ -262,28 +262,30 @@ do
 			optionTree:add(f_o_length, val_len)
 			if val_len ~= 0 then
 				v_optionvalue = buf(offset+opt_hd_len, val_len)
+                                valstring = v_optionvalue:string()
 				optionTree:add(f_optionvalue_type[opt_num], v_optionvalue)
 			else
-				-- no option value
+                           -- no option value
+                           valstring = ""
 			end
 			
 			--info col
 			-- UriPathOption
 			if opt_num == 11 then
 				if firstPathOpt == 1 then
-					infocol = infocol..v_optionvalue:string()
+					infocol = infocol..valstring
 					firstPathOpt = 0
 				else
-					infocol = infocol.."/"..v_optionvalue:string()
+					infocol = infocol.."/"..valstring
 				end
 			end
 			-- UriQueryOption
 			if opt_num == 15 then
 				if firstPathOpt == 1 then
-					infocol = infocol.."?"..v_optionvalue
+					infocol = infocol.."?"..valstring
 					firstQueryOpt = 0
 				else
-					infocol = infocol.."&"..v_optionvalue
+					infocol = infocol.."&"..valstring
 				end
 			end
 			
