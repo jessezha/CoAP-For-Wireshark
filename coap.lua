@@ -16,36 +16,36 @@ do
 		{ [0] = "Confirmable", [1] = "Non-Confirmable", [2] = "Acknowledgement", [3] = "Reset" }, 0x30
 	)
 	local f_optionCount = ProtoField.uint8("CoAP.optionCount","Option Count",base.DEC, nil, 0x0F)
-	local f_code = ProtoField.uint8("CoAP.code","Code",base.DEC,
-		{
-			[0]   = "Empty",
-			[1]   = "GET",
-			[2]   = "POST",
-			[3]   = "PUT",
-			[4]   = "DELETE",
-			[65]  = "2.01 Created",
-			[66]  = "2.02 Deleted",
-			[67]  = "2.03 Valid",
-			[68]  = "2.04 Changed",
-			[69]  = "2.05 Content",
-			[128] = "4.00 Bad Request",
-			[129] = "4.01 Unauthorized",
-			[130] = "4.02 Bad Option",
-			[131] = "4.03 Forbidden",
-			[132] = "4.04 Not Found",
-			[133] = "4.05 Method Not Allowed",
-			[134] = "4.06 Not Acceptable",
-			[140] = "4.12 Precondition Failed",
-			[141] = "4.13 Request Entity Too Large",
-			[143] = "4.15 Unsupported Content-Format",
-			[160] = "5.00 Internal Server Error",
-			[161] = "5.01 Not Implemented",
-			[162] = "5.02 Bad Gateway",
-			[163] = "5.03 Service Unavailable",
-			[164] = "5.04 Gateway Timeout",
-			[165] = "5.05 Proxying Not Supported"
-		}
-	)
+	
+	local codeList = {
+		[0]   = "Empty",
+		[1]   = "GET",
+		[2]   = "POST",
+		[3]   = "PUT",
+		[4]   = "DELETE",
+		[65]  = "2.01 Created",
+		[66]  = "2.02 Deleted",
+		[67]  = "2.03 Valid",
+		[68]  = "2.04 Changed",
+		[69]  = "2.05 Content",
+		[128] = "4.00 Bad Request",
+		[129] = "4.01 Unauthorized",
+		[130] = "4.02 Bad Option",
+		[131] = "4.03 Forbidden",
+		[132] = "4.04 Not Found",
+		[133] = "4.05 Method Not Allowed",
+		[134] = "4.06 Not Acceptable",
+		[140] = "4.12 Precondition Failed",
+		[141] = "4.13 Request Entity Too Large",
+		[143] = "4.15 Unsupported Content-Format",
+		[160] = "5.00 Internal Server Error",
+		[161] = "5.01 Not Implemented",
+		[162] = "5.02 Bad Gateway",
+		[163] = "5.03 Service Unavailable",
+		[164] = "5.04 Gateway Timeout",
+		[165] = "5.05 Proxying Not Supported"
+	}
+	local f_code = ProtoField.uint8("CoAP.code", "Code", base.DEC, codeList)
 	local f_mid = ProtoField.uint16("CoAP.messageID", "Message ID", base.HEX)
 	
 	-- Define Options
@@ -119,13 +119,13 @@ do
 		[35] = f_o_value_string
 	}
 	
-	local f_payload = ProtoField.bytes("CoAP.payload","Payload")
+	local f_payload = ProtoField.string("CoAP.payload","Payload",nil)
 	
 	p_coap.fields = { f_version, f_type, f_optionCount, f_code, f_mid, f_o_contentFormat, 
 						f_o_maxAge, f_o_proxyUri, f_o_eTag, f_o_uriHost, f_o_locationPath,
 						f_o_uriPort, f_o_locationQuery, f_o_uriPath, f_o_observe, f_o_block1, f_o_block2, f_o_size, f_o_token, 
 						f_o_accept, f_o_ifMatch, f_o_uriQuery, f_o_ifNoneMatch, f_o_unrecognized, 
-						f_o_jump, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_o_value_empty, f_payload }
+						f_o_jump, f_o_delta, f_o_length, f_o_value_uint, f_o_value_string, f_o_value_opaque, f_o_value_empty, f_payload}
 	
 	local data_dis = Dissector.get("data")
 	
@@ -134,6 +134,7 @@ do
 		if buf_len < 4 then return false end
 		local subtree = tree:add(p_coap, buf)
 		local offset = 0
+		local infocol = nil;
 		
 		-- get version,type,oc bit values using bitstring
 		local firstByte = buf(offset, 1)
@@ -156,6 +157,12 @@ do
 
 		pkt.cols.info = "CoAP " .. mtype .. " " .. v_code   -- this needs to be fixed and expanded
 		
+		--info col
+		infocol = "CoAP "..codeList[v_code:uint()].." "
+		if v_code:uint() >= 1 and v_code:uint() <= 31 then
+			infocol = infocol.."/"
+		end
+		
 		-- get message id
 		local v_mid = buf(offset, 2)
 		subtree:add(f_mid, v_mid)
@@ -169,6 +176,8 @@ do
 		
 		-- get options
 		local pre_opt_num = 0;
+		local firstPathOpt = 1
+		local firstQueryOpt = 1
 		for i=1, optionCount do
 			-- init option's length & option value's length
 			local opt_len = 0
@@ -241,6 +250,7 @@ do
 			
 			local v_option = buf(offset,opt_len)
 			local optionTree = nil
+			local v_optionvalue = nil
 			
 			if f_options[opt_num] ~= nil then
 				optionTree = subtree:add(f_options[opt_num],v_option)
@@ -251,10 +261,30 @@ do
 			optionTree:add(f_o_delta, delta_length)
 			optionTree:add(f_o_length, val_len)
 			if val_len ~= 0 then
-				local v_optionvalue = buf(offset+opt_hd_len, val_len)
+				v_optionvalue = buf(offset+opt_hd_len, val_len)
 				optionTree:add(f_optionvalue_type[opt_num], v_optionvalue)
 			else
 				-- no option value
+			end
+			
+			--info col
+			-- UriPathOption
+			if opt_num == 11 then
+				if firstPathOpt == 1 then
+					infocol = infocol..v_optionvalue:string()
+					firstPathOpt = 0
+				else
+					infocol = infocol.."/"..v_optionvalue:string()
+				end
+			end
+			-- UriQueryOption
+			if opt_num == 15 then
+				if firstPathOpt == 1 then
+					infocol = infocol.."?"..v_optionvalue
+					firstQueryOpt = 0
+				else
+					infocol = infocol.."&"..v_optionvalue
+				end
 			end
 			
 			offset = offset + opt_len
@@ -268,6 +298,9 @@ do
 			local v_payload = buf(offset)
 			subtree:add(f_payload, v_payload)
 		end
+		
+		-- info col
+		pkt.cols.info = infocol
 		
 		return true
 	end

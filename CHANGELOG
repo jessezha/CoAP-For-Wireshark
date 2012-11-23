@@ -1,3 +1,7 @@
+-- version 0.52 (20121123) --
+a. Modified the text information showed in wireshark's info column to get better overview
+b. Thanks for Cabo's request[https://github.com/cabo]
+
 -- version 0.51 (20121115) --
 a. Changed block1, block2, size, observe option number described in [block-10] and [observe-07]
 b. Modified '4.15 Unsupported Media Type' to '4.15 Unsupported Content-Format'
