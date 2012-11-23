@@ -154,8 +154,6 @@ do
 		local v_code = buf(offset, 1)
 		subtree:add(f_code, v_code)
 		offset = offset + 1
-
-		pkt.cols.info = "CoAP " .. mtype .. " " .. v_code   -- this needs to be fixed and expanded
 		
 		--info col
 		infocol = "CoAP "..codeList[v_code:uint()].." "
